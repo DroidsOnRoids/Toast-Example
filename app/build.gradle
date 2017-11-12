@@ -1,0 +1,74 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.ajoberstar:gradle-git:1.7.2'
+    }
+}
+
+import org.ajoberstar.grgit.Grgit
+
+def git = Grgit.open(currentDir: projectDir)
+def commitsOnBranchCount = git.log(includes:['HEAD']).size()
+def commitTimestamp = git.head().time
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion '27.0.1'
+    defaultConfig {
+        applicationId "pl.droidsonroids.toastexample"
+        minSdkVersion 21
+        targetSdkVersion 26
+        versionCode commitTimestamp
+        versionName "0.1.$commitsOnBranchCount"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    signingConfigs {
+        debug {
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+            storePassword 'android'
+            storeFile file("${System.properties["user.home"]}/.android/debug.keystore")
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled true
+            useProguard false
+        }
+    }
+
+    flavorDimensions 'server'
+    productFlavors {
+        staging {
+            dimension 'server'
+            applicationIdSuffix '.staging'
+            buildConfigField 'String', 'BASE_API_URL', '"https://staging.test"'
+        }
+        production {
+            dimension 'server'
+            buildConfigField 'String', 'BASE_API_URL', '"https://prod.test"'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(path: ':shakeDetector')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    compileOnly 'com.android.support:support-annotations:27.0.1'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
